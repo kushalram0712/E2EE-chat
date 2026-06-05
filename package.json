@@ -1,11 +1,12 @@
 {
   "name": "e2ee-chat",
   "version": "1.0.0",
-  "description": "Secure E2EE Chat App",
   "main": "server.js",
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
-    "start": "node server.js",
-    "install": "npm install --build-from-source"
+    "start": "node server.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
