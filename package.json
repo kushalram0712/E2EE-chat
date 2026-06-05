@@ -4,8 +4,9 @@
   "description": "A secure, real-time messaging application built with **End-to-End Encryption (E2EE)**. This project ensures that messages are encrypted on the sender's device and can only be decrypted by the intended recipient, keeping data completely private from servers and third parties.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "start": "node server.js",
+  "install": "npm install --build-from-source"
+}
   "repository": {
     "type": "git",
     "url": "git+https://github.com/kushalram0712/E2EE-chat.git"
