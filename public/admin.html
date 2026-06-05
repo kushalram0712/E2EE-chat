@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vault Admin Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+      background-color: #0b141a; color: #e9edef; padding: 40px 20px;
+    }
+    .container { max-width: 800px; margin: 0 auto; background: #111b21; padding: 30px; border-radius: 12px; border: 1px solid #2a3942; }
+    h1, h2 { color: #00a884; margin-bottom: 20px; border-bottom: 1px solid #2a3942; padding-bottom: 10px; }
+    
+    /* Login Section */
+    #admin-login { display: flex; gap: 10px; margin-bottom: 30px; }
+    input { padding: 12px; background: #2a3942; color: white; border: 1px solid transparent; border-radius: 6px; flex-grow: 1; outline: none; }
+    input:focus { border-color: #00a884; }
+    button { padding: 12px 20px; background: #00a884; color: #111b21; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    button:hover { background: #008f6f; }
+    button.danger { background: #f15c6d; color: white; }
+    button.danger:hover { background: #d04b5a; }
+
+    /* Dashboard Section */
+    #dashboard { display: none; }
+    .form-group { display: flex; gap: 10px; margin-bottom: 20px; background: #202c33; padding: 15px; border-radius: 8px; }
+    
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 15px; text-align: left; border-bottom: 1px solid #2a3942; }
+    th { color: #8696a0; font-weight: 500; }
+    tr:hover { background: #202c33; }
+    
+    .status { margin-top: 10px; color: #00a884; font-size: 0.9rem; }
+    .error { color: #f15c6d; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Vault Admin 🔒</h1>
+    
+    <div id="admin-login">
+      <input type="password" id="api-key" placeholder="Enter Admin API Key..." autocomplete="off">
+      <button onclick="loadUsers()">Access Dashboard</button>
+    </div>
+    <div id="auth-status" class="status error"></div>
+
+    <div id="dashboard">
+      <h2>Manage Users</h2>
+      
+      <div class="form-group">
+        <input type="text" id="username" placeholder="Username">
+        <input type="text" id="password" placeholder="Password">
+        <button onclick="saveUser()">Add / Update User</button>
+      </div>
+      <div id="action-status" class="status"></div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="user-list">
+          </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    let currentApiKey = '';
+
+    // --- API CALL: Fetch Users ---
+    async function loadUsers() {
+      currentApiKey = document.getElementById('api-key').value;
+      const statusDiv = document.getElementById('auth-status');
+      
+      try {
+        const response = await fetch('/api/admin/users', {
+          headers: { 'x-admin-key': currentApiKey }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          document.getElementById('admin-login').style.display = 'none';
+          document.getElementById('dashboard').style.display = 'block';
+          statusDiv.innerText = '';
+          renderTable(data.users);
+        } else {
+          statusDiv.innerText = data.message || 'Access Denied.';
+        }
+      } catch (err) {
+        statusDiv.innerText = 'Server Error.';
+      }
+    }
+
+    // --- API CALL: Add or Update User ---
+    async function saveUser() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const statusDiv = document.getElementById('action-status');
+
+      if (!username || !password) {
+        statusDiv.className = 'status error';
+        statusDiv.innerText = 'Please provide both username and password.';
+        return;
+      }
+
+      // First try to Create (POST). If user exists, Update (PUT).
+      let response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': currentApiKey },
+        body: JSON.stringify({ username, password })
+      });
+
+      let data = await response.json();
+
+      if (!data.success && data.message === "User already exists") {
+        // Switch to Update
+        response = await fetch('/api/admin/users', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'x-admin-key': currentApiKey },
+          body: JSON.stringify({ username, newPassword: password })
+        });
+        data = await response.json();
+      }
+
+      statusDiv.className = data.success ? 'status' : 'status error';
+      statusDiv.innerText = data.message;
+      
+      if (data.success) {
+        document.getElementById('username').value = '';
+        document.getElementById('password').value = '';
+        loadUsers(); // Refresh the list
+      }
+    }
+
+    // --- API CALL: Delete User ---
+    async function deleteUser(username) {
+      if (!confirm(`Are you sure you want to delete ${username}?`)) return;
+
+      const statusDiv = document.getElementById('action-status');
+      const response = await fetch(`/api/admin/users/${username}`, {
+        method: 'DELETE',
+        headers: { 'x-admin-key': currentApiKey }
+      });
+      const data = await response.json();
+
+      statusDiv.className = data.success ? 'status' : 'status error';
+      statusDiv.innerText = data.message;
+      
+      if (data.success) loadUsers(); // Refresh the list
+    }
+
+    // --- UTILITY: Render the HTML Table ---
+    function renderTable(users) {
+      const tbody = document.getElementById('user-list');
+      tbody.innerHTML = '';
+      
+      users.forEach(username => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${username}</strong></td>
+          <td>
+            <button class="danger" onclick="deleteUser('${username}')">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+  </script>
+</body>
+</html>

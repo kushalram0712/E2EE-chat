@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Secure Vault Chat</title>
+  <style>
+    /* --- RESET & BASE STYLES (DARK THEME) --- */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+      background-color: #0b141a; /* Deep dark background */
+      color: #e9edef; /* Off-white text */
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      height: 100vh; 
+    }
+
+    /* --- LOGIN OVERLAY STYLES --- */
+    #login-container {
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #0b141a;
+    }
+
+    .login-box {
+      background: #111b21; /* Slightly lighter dark for the card */
+      padding: 35px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      width: 100%;
+      max-width: 340px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      text-align: center;
+      border: 1px solid #2a3942;
+    }
+
+    .login-box h2 {
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      margin-bottom: 5px;
+    }
+
+    .login-box input {
+      padding: 14px;
+      background-color: #2a3942; /* Dark inputs */
+      color: #d1d7db;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+      transition: border 0.2s;
+    }
+    
+    .login-box input:focus {
+      border: 1px solid #00a884; /* Emerald green focus */
+    }
+
+    .login-box input::placeholder {
+      color: #8696a0;
+    }
+
+    .login-box button {
+      padding: 14px;
+      background-color: #00a884;
+      color: #111b21;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      margin-top: 10px;
+    }
+    
+    .login-box button:hover {
+      background-color: #008f6f;
+    }
+
+    /* --- MAIN APP CONTAINER STYLES --- */
+    #app-container {
+      display: none; /* Hidden until the user logs in */
+      width: 100%;
+      max-width: 500px;
+      height: 100vh;
+      background-color: #111b21;
+      flex-direction: column;
+      position: relative;
+    }
+    @media (min-width: 500px) {
+      #app-container { 
+        height: 90vh; 
+        max-height: 850px;
+        border-radius: 16px; 
+        overflow: hidden; 
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        border: 1px solid #2a3942;
+      }
+    }
+
+    header {
+      background-color: #202c33;
+      color: #e9edef;
+      padding: 18px 20px;
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: 600;
+      border-bottom: 1px solid #2a3942;
+      z-index: 10;
+    }
+
+    #chat-box {
+      flex-grow: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      background-color: #0b141a;
+      /* Subtle dark dot pattern for texture */
+      background-image: radial-gradient(#202c33 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+
+    /* --- MESSAGE BUBBLE STYLES --- */
+    .message {
+      max-width: 78%;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      word-wrap: break-word;
+      width: fit-content;
+      animation: fadeIn 0.2s ease-out;
+    }
+    
+    .me {
+      background-color: #005c4b; /* Dark mode emerald bubble */
+      color: #e9edef;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+    
+    .them {
+      background-color: #202c33; /* Dark gray bubble */
+      color: #e9edef;
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+    
+    .system {
+      background-color: rgba(32, 44, 51, 0.8);
+      color: #8696a0;
+      font-size: 0.75rem;
+      font-weight: 500;
+      align-self: center;
+      border-radius: 16px;
+      padding: 6px 14px;
+      margin-bottom: 14px;
+      text-align: center;
+      border: 1px solid #2a3942;
+    }
+
+    /* --- INPUT AREA STYLES --- */
+    #input-area {
+      display: flex;
+      padding: 14px 16px;
+      background-color: #202c33;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    #message-input {
+      flex-grow: 1;
+      border: none;
+      background-color: #2a3942;
+      color: #e9edef;
+      padding: 14px 20px;
+      border-radius: 24px;
+      font-size: 1rem;
+      outline: none;
+    }
+    
+    #message-input::placeholder {
+      color: #8696a0;
+    }
+    
+    #message-input:disabled { 
+      background-color: #202c33; 
+      cursor: not-allowed; 
+      opacity: 0.6;
+    }
+    
+    #send-btn {
+      background-color: #00a884;
+      color: #111b21;
+      border: none;
+      border-radius: 50%;
+      width: 46px;
+      height: 46px;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: all 0.2s;
+    }
+    
+    #send-btn:disabled { 
+      background-color: #2a3942; 
+      color: #8696a0;
+      cursor: not-allowed; 
+    }
+    
+    #send-btn:hover:not(:disabled) { 
+      background-color: #008f6f; 
+      transform: scale(1.05);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Scrollbar Styling for webkit browsers */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #374045; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #8696a0; }
+  </style>
+</head>
+<body>
+
+  <div id="login-container">
+    <div class="login-box">
+      <h2>Vault Login</h2>
+      <p id="login-error" style="color: #f15c6d; font-size: 0.9rem; display: none; margin-bottom: 0;"></p>
+      <input type="text" id="username-input" placeholder="Username" autocomplete="off">
+      <input type="password" id="password-input" placeholder="Password">
+      <button id="login-btn">Secure Login</button>
+    </div>
+  </div>
+
+  <div id="app-container">
+    <header>Vault Chat 🔒</header>
+    
+    <div id="chat-box">
+      </div>
+    
+    <div id="input-area">
+      <input type="text" id="message-input" placeholder="Type a secure message..." autocomplete="off" disabled>
+      <button id="send-btn" disabled>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+          <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="app.js"></script>
+  
+  <script>
+    document.getElementById('message-input').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter' && !this.disabled) {
+        document.getElementById('send-btn').click();
+      }
+    });
+    
+    // Add enter key support for login as well
+    document.getElementById('password-input').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') {
+        document.getElementById('login-btn').click();
+      }
+    });
+  </script>
+</body>
+</html>

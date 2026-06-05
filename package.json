@@ -1,0 +1,30 @@
+{
+  "name": "e2ee-chat",
+  "version": "1.0.0",
+  "description": "A secure, real-time messaging application built with **End-to-End Encryption (E2EE)**. This project ensures that messages are encrypted on the sender's device and can only be decrypted by the intended recipient, keeping data completely private from servers and third parties.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kushalram0712/E2EE-chat.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/kushalram0712/E2EE-chat/issues"
+  },
+  "homepage": "https://github.com/kushalram0712/E2EE-chat#readme",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "express": "^5.2.1",
+    "express-json": "^1.0.0",
+    "jsonwebtoken": "^9.0.3",
+    "socket.io": "^4.8.3",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^6.0.1"
+  }
+}
